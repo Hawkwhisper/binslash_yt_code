@@ -1,0 +1,14 @@
+img/
+audio/
+data/
+css/
+effects/
+icon/
+fonts/
+movies/
+nwjs*/
+save/
+game.r*
+index.html
+package.json
+js/libs
