@@ -3,6 +3,9 @@
  */
 
 (() => {
+    const PI = Math.PI;
+    const PI2 = Math.PI/2;
+    const PI2X = Math.PI*2;
     ///////////////////////////////////////////
     // FUNCTIONS
     ///////////////////////////////////////////
@@ -23,10 +26,9 @@
                     return HWEngine._glslExtensions[name];
                 });
 
-                vert = `#version 300 es \nprecision lowp float;\n${vert}`;
-                frag = `#version 300 es \nprecision lowp float;\n${frag}`;
+                vert = `#version 300 es \nprecision highp float;\n${vert}`;
+                frag = `#version 300 es \nprecision highp float;\n${frag}`;
 
-               
                 callback(vert, frag);
             });
         });
@@ -42,6 +44,7 @@
             }
 
             this._createExtensions();
+
         }
 
         compileFilter(src, callback) {
@@ -185,6 +188,17 @@
         on(name, callback) {
             this._events[name].push(callback);
         }
+
+        updateFilterUniforms(filters) {
+            filters.map(filter=>{
+                filter.uniforms.hwWidth = Graphics.width;
+                filter.uniforms.hwHeight = Graphics.height;
+                filter.uniforms.hwRandom = Math.random();
+                filter.uniforms.hwPi = PI;
+                filter.uniforms.hwPi2 = PI2;
+                filter.uniforms.hwPi2x = PI2X;
+            });
+        }
     }
 
     Scene_Title = class extends Scene_Title {
@@ -201,6 +215,10 @@
             // hwFilter.on("filterLoaded", (filter, vert, frag) => {
             //     this.filters.push(hwFilter.filter)
             // });
+        }
+
+        updates() {
+            HWEngine.updateFilterUniforms(this.filters);
         }
     }
 })();
