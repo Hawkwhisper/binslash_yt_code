@@ -3,9 +3,11 @@
  */
 
 (() => {
+    document.body.innerHTML += `<style>html, body, canvas{margin: 0px; padding: 0px; image-rendering: pixelated; image-rendering: crisp-edges; image-rendering: optimizeSpeed;}</style>`;
     const PI = Math.PI;
-    const PI2 = Math.PI/2;
-    const PI2X = Math.PI*2;
+    const PI2 = Math.PI / 2;
+    const PI2X = Math.PI * 2;
+    const PI60 = Math.PI / 60;
     ///////////////////////////////////////////
     // FUNCTIONS
     ///////////////////////////////////////////
@@ -49,7 +51,8 @@
 
         compileFilter(src, callback) {
             loadShader(src, (vert, frag) => {
-                const filter = new PIXI.Filter(vert, frag, {});
+                const coreUniforms = { hwDelta: 0 };
+                const filter = new PIXI.Filter(vert, frag, { ...coreUniforms });
                 callback(filter);
                 this._fireEvents('filterLoaded', filter);
             });
@@ -190,35 +193,110 @@
         }
 
         updateFilterUniforms(filters) {
-            filters.map(filter=>{
+            filters.map(filter => {
                 filter.uniforms.hwWidth = Graphics.width;
                 filter.uniforms.hwHeight = Graphics.height;
                 filter.uniforms.hwRandom = Math.random();
                 filter.uniforms.hwPi = PI;
                 filter.uniforms.hwPi2 = PI2;
                 filter.uniforms.hwPi2x = PI2X;
+                filter.uniforms.hwDelta += PI60;
             });
         }
     }
 
-    Scene_Title = class extends Scene_Title {
+    var globalBinShader = null;
+    function applyBinFilter() {
+        return;
+        if(globalBinShader) {
+            this.bin_shader = globalBinShader;
+            if(this.filters) this.filters.push(this.bin_shader);
+        }
+        this.bin_shader = new PIXI.Filter();
+        HWEngine.compileFilter("bin_shader", (filter) => {
+            if (this.filters) {
+                this.filters.splice(this.filters.indexOf(this.bin_shader));
+            } else {
+                this.filters = [];
+            }
+            globalBinShader = filter;
+            this.bin_shader = globalBinShader;
+            this.filters.push(this.bin_shader);
+        });
+        this.filters.push(this.bin_shader);
+    }
+
+    var globalSWShader = null;
+    function applySoftWhisperFilter() {
+        // return;
+        if(globalSWShader) {
+            this.sw_shader = globalSWShader;
+            if(this.filters) this.filters.push(this.sw_shader);
+        }
+        this.sw_shader = new PIXI.Filter();
+        HWEngine.compileFilter("sw_shader", (filter) => {
+            if (this.filters) {
+                this.filters.splice(this.filters.indexOf(this.sw_shader));
+            } else {
+                this.filters = [];
+            }
+            globalSWShader = filter;
+            this.sw_shader = globalSWShader;
+            this.filters.push(this.sw_shader);
+        });
+        this.filters.push(this.sw_shader);
+    }
+
+    Scene_Map = class extends Scene_Map {
         start() {
             super.start();
-            this.bin_shader = new PIXI.Filter();
-            HWEngine.compileFilter("bin_shader", (filter) => {
-                this.filters.splice(this.filters.indexOf(this.bin_shader));
-                this.bin_shader = filter;
-                this.filters.push(this.bin_shader);
-                console.log('wat');
-            });
-            this.filters.push(this.bin_shader);
-            // hwFilter.on("filterLoaded", (filter, vert, frag) => {
-            //     this.filters.push(hwFilter.filter)
-            // });
+            applyBinFilter.call(this, ...arguments);
+                        applySoftWhisperFilter.call(this, ...arguments);
         }
 
-        updates() {
+        update() {
+            super.update();
             HWEngine.updateFilterUniforms(this.filters);
         }
-    }
+    };
+    
+    Scene_Base = class extends Scene_Base {
+        start() {
+            super.start();
+            applyBinFilter.call(this, ...arguments);
+                        applySoftWhisperFilter.call(this, ...arguments);
+        }
+
+        update() {
+            super.update();
+            HWEngine.updateFilterUniforms(this.filters);
+        }
+    };
+
+    Scene_MenuBase = class extends Scene_MenuBase {
+        start() {
+            super.start();
+            applyBinFilter.call(this, ...arguments);
+                        applySoftWhisperFilter.call(this, ...arguments);
+        }
+
+        update() {
+            super.update();
+            HWEngine.updateFilterUniforms(this.filters);
+        }
+    };
+
+    Scene_Options = class extends Scene_Options {
+        start() {
+            super.start();
+            applyBinFilter.call(this, ...arguments);
+                        applySoftWhisperFilter.call(this, ...arguments);
+        }
+
+        update() {
+            super.update();
+            HWEngine.updateFilterUniforms(this.filters);
+        }
+    };
+
 })();

@@ -22,6 +22,14 @@
  * @type struct<winPos>
  * @default {"init_position":"Mid Center","x":"0","y":"0"}
  * 
+ * @arg title
+ * @text Title (optional)
+ * @type text
+ * 
+ * @arg description
+ * @text Description (optional)
+ * @type note
+ * 
  * @help
  * This makes use of the PLugin Commands option in events!
  * You can use that to create a giant list of options,
@@ -94,7 +102,7 @@ var $wc = {
     const pluginName = "tupWorldChoice";
 
     PluginManager.registerCommand(pluginName, "Choices", args => {
-        var { list, columns, position } = args;
+        var { list, columns, position, title, description } = args;
         list = JSON.parse(list);
         position = JSON.parse(position);
         position.x = JSON.parse(position.x);
@@ -102,11 +110,13 @@ var $wc = {
         columns = parseInt(columns);
 
         const mcWindow = new Window_HWCmd();
+     
+
         SceneManager._scene._mcWindowActive = mcWindow;
         mcWindow.prepare(columns, position.init_position, position.x, position.y, list);
         SceneManager._scene.addChild(mcWindow);
-
-
+        mcWindow._openness = 1;
+        mcWindow.open();
         mcWindow.setHandler('a', () => {
             mcWindow.close();
             $gameMap._interpreter._index--;
@@ -190,6 +200,17 @@ var $wc = {
         update() {
             super.update();
             $wc.lastChoice = this._index;
+        }
+    }
+
+    Scene_Map = class extends Scene_Map {
+        update() {
+            super.update();
+            if(this._mcWindowActive) {
+                if(this._mcWindowActive._openness == 0) {
+                    this.removeChild(this._mcWindowActive);
+                }
+            }
         }
     }
 
